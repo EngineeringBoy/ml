@@ -6,6 +6,8 @@ class Layer:
     def __init__(self, name):
         self.name = name
         self.out = None
+        self.weights = None
+        self.bias = None
 
     def forward(self, inputs):
         pass
@@ -22,8 +24,11 @@ class Layer:
     def update(self, lr=1e-3):
         pass
 
+    def parameters(self):
+        return self.weights, self.bias
 
-class Model:
+
+class Module:
     def __init__(self, lr=1e-3, r=1):
         self.layers = []
         self.r = r
@@ -40,6 +45,23 @@ class Model:
             grad_out = layer.backward(grad_out)
             layer.update(self.lr)
         return grad_out
+
+    def parameters(self):
+        parameters = None
+        for layer in self.layers:
+            if layer.weights is not None and layer.bias is not None:
+                if parameters is None:
+                    parameters = np.concatenate((np.expand_dims(layer.bias, axis=0), layer.weights), axis=0).ravel()
+                else:
+                    parameters = np.concatenate((parameters,
+                                                 np.concatenate((np.expand_dims(layer.bias, axis=0), layer.weights),
+                                                                axis=0).ravel()))
+            elif layer.weights is not None and layer.bias is None:
+                if parameters is None:
+                    parameters = layer.weights.ravel()
+                else:
+                    parameters = np.concatenate((parameters, layer.weights.ravel()))
+        return parameters
 
     def compute_penalty(self):
         penalty = 0.
@@ -128,6 +150,11 @@ class FC(Layer):
         return penalty
 
 
+class MSELoss(Module):
+    def __init__(self):
+        super(MSELoss, self).__init__()
+
+
 class Loss:
     def __init__(self, name='loss'):
         self.name = name
@@ -151,7 +178,7 @@ class Accuracy:
         return len(y_label[y_true.ravel() == y_label.ravel()]) / len(y_true)
 
 
-class Net(Model):
+class Net(Module):
     def __init__(self, lr=1e-3, r=1):
         super(Net, self).__init__(lr=lr, r=r)
         self.layers = [FC('FC1', 400, 25),

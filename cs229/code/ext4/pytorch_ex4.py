@@ -1,6 +1,7 @@
 import torch
 from scipy import io
 import matplotlib.pyplot as plt
+import torch.nn.functional as F
 
 
 class Net(torch.nn.Module):
@@ -28,7 +29,7 @@ if __name__ == '__main__':
     data1 = io.loadmat('ex4data1.mat')
     X = torch.from_numpy(data1['X']).to(torch.float32)
     y = torch.from_numpy(data1['y']).to(torch.int64)
-    y_one_hot = torch.nn.functional.one_hot((y - 1).ravel(), num_classes=10).to(torch.float32)
+    y_one_hot = F.one_hot((y - 1).ravel(), num_classes=10).to(torch.float32)
 
     for iteration in range(10000):
         y_pred = net(X)
